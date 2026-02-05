@@ -38,17 +38,44 @@ export default function WorkflowForm({ onSubmit, onCancel }) {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="My workflow"
-          style={formStyles.input}
+          style={{
+            ...formStyles.input,
+            ...(loading && formStyles.inputDisabled)
+          }}
           autoFocus
           disabled={loading}
         />
       </div>
-      {error && <div style={formStyles.error}>{error}</div>}
+      {error && (
+        <div style={formStyles.error}>
+          <span style={formStyles.errorIcon}>⚠</span>
+          {error}
+        </div>
+      )}
       <div style={formStyles.actions}>
-        <button type="button" style={formStyles.cancelButton} onClick={onCancel} disabled={loading}>
+        <button 
+          type="button" 
+          style={{
+            ...formStyles.cancelButton,
+            ...(loading && formStyles.buttonDisabled)
+          }}
+          onClick={onCancel} 
+          disabled={loading}
+          onMouseEnter={(e) => !loading && Object.assign(e.target.style, formStyles.cancelButtonHover)}
+          onMouseLeave={(e) => Object.assign(e.target.style, formStyles.cancelButton)}
+        >
           Cancel
         </button>
-        <button type="submit" style={formStyles.submitButton} disabled={loading}>
+        <button 
+          type="submit" 
+          style={{
+            ...formStyles.submitButton,
+            ...(loading && formStyles.buttonDisabled)
+          }}
+          disabled={loading}
+          onMouseEnter={(e) => !loading && Object.assign(e.target.style, formStyles.submitButtonHover)}
+          onMouseLeave={(e) => Object.assign(e.target.style, formStyles.submitButton)}
+        >
           {loading ? 'Creating…' : 'Create'}
         </button>
       </div>
@@ -57,12 +84,97 @@ export default function WorkflowForm({ onSubmit, onCancel }) {
 }
 
 const formStyles = {
-  form: { padding: 20, marginBottom: 24, background: '#fff', borderRadius: 8, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' },
-  row: { marginBottom: 16 },
-  label: { display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 },
-  input: { width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: 6 },
-  error: { marginBottom: 12, color: '#b91c1c', fontSize: 14 },
-  actions: { display: 'flex', gap: 12, justifyContent: 'flex-end' },
-  cancelButton: { padding: '8px 16px', background: '#f3f4f6', border: 'none', borderRadius: 6 },
-  submitButton: { padding: '8px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 500 },
+  form: { 
+    padding: '24px', 
+    marginBottom: 24, 
+    background: '#ffffff', 
+    borderRadius: 12, 
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04)',
+    border: '1px solid #e5e7eb'
+  },
+  row: { 
+    marginBottom: 20 
+  },
+  label: { 
+    display: 'block', 
+    marginBottom: 8, 
+    fontWeight: 600, 
+    fontSize: 14,
+    color: '#374151',
+    letterSpacing: '-0.01em'
+  },
+  input: { 
+    width: '100%', 
+    padding: '11px 14px', 
+    border: '1.5px solid #d1d5db', 
+    borderRadius: 8,
+    fontSize: 15,
+    fontFamily: 'inherit',
+    transition: 'all 0.2s ease',
+    outline: 'none',
+    boxSizing: 'border-box',
+    background: '#ffffff'
+  },
+  inputDisabled: {
+    opacity: 0.6,
+    cursor: 'not-allowed',
+    background: '#f9fafb'
+  },
+  error: { 
+    marginBottom: 16, 
+    padding: '10px 14px',
+    background: '#fef2f2',
+    border: '1px solid #fecaca',
+    borderRadius: 8,
+    color: '#991b1b', 
+    fontSize: 14,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8
+  },
+  errorIcon: {
+    fontSize: 16
+  },
+  actions: { 
+    display: 'flex', 
+    gap: 12, 
+    justifyContent: 'flex-end',
+    marginTop: 24
+  },
+  cancelButton: { 
+    padding: '10px 20px', 
+    background: '#f3f4f6', 
+    border: 'none', 
+    borderRadius: 8,
+    fontSize: 14,
+    fontWeight: 500,
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    color: '#374151',
+    fontFamily: 'inherit'
+  },
+  cancelButtonHover: {
+    background: '#e5e7eb'
+  },
+  submitButton: { 
+    padding: '10px 24px', 
+    background: '#2563eb', 
+    color: '#ffffff', 
+    border: 'none', 
+    borderRadius: 8, 
+    fontWeight: 600,
+    fontSize: 14,
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    fontFamily: 'inherit',
+    boxShadow: '0 1px 2px rgba(37, 99, 235, 0.2)'
+  },
+  submitButtonHover: {
+    background: '#1d4ed8',
+    boxShadow: '0 2px 4px rgba(37, 99, 235, 0.3)'
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+    cursor: 'not-allowed'
+  }
 };

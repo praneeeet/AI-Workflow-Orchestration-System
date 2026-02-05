@@ -30,11 +30,12 @@ export class StepExecution {
   @Column({ type: 'uuid' })
   stepId: string;
 
-  @Column({ nullable: true })
-  errorMessage?: string;
+@Column({ type: 'text', nullable: true })
+errorMessage?: string | null;
 
-  @Column({ nullable: true })
-  failureReason?: string;
+@Column({ type: 'text', nullable: true })
+failureReason?: string | null;
+
 
   @ManyToOne(() => ExecutionRun, (run) => run.stepExecutions, {
     onDelete: 'CASCADE',

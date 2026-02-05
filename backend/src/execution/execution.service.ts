@@ -18,8 +18,10 @@ export class ExecutionService {
   constructor(
     @InjectRepository(ExecutionRun)
     private readonly executionRunRepository: Repository<ExecutionRun>,
+
     @InjectRepository(StepExecution)
     private readonly stepExecutionRepository: Repository<StepExecution>,
+
     private readonly workflowService: WorkflowService,
     private readonly stepService: StepService,
     private readonly llmService: LlmService,
@@ -28,6 +30,7 @@ export class ExecutionService {
 
   async run(workflowId: string): Promise<ExecutionRun> {
     await this.workflowService.findOne(workflowId);
+
     const steps = await this.stepService.findByWorkflowId(workflowId);
 
     if (steps.length === 0) {
@@ -44,6 +47,7 @@ export class ExecutionService {
       status: RUN_STATUS.RUNNING,
       currentStepIndex: 0,
     });
+
     const run = await this.executionRunRepository.save(executionRun);
 
     let previousOutput: string | null = null;
@@ -52,41 +56,56 @@ export class ExecutionService {
       const step = steps[i];
       const prompt = buildPrompt(step.prompt, previousOutput);
 
-      let output: string = '';
+      let output = '';
       let attemptCount = 0;
-      const maxAttempts = step.retryLimit + 1;
       let valid = false;
+
+      let failureReason: string | null = null;
+      let errorMessage: string | null = null;
+
+      const maxAttempts = step.retryLimit + 1;
 
       while (attemptCount < maxAttempts) {
         attemptCount++;
+
         try {
           output = await this.llmService.chatCompletion({
             model: step.model,
             prompt,
           });
+
           valid = this.criteriaService.validate(
             output,
             step.criteriaType,
             step.criteriaValue,
           );
+
+          if (!valid) {
+            failureReason =
+              `Validation failed: Output does not satisfy ${step.criteriaType}`;
+          }
+
           if (valid) break;
-        } catch {
-          // Swallow LLM/validation errors and retry up to retryLimit
+        } catch (error) {
+          errorMessage = error?.message || 'LLM call failed';
         }
       }
 
       const stepStatus = valid
         ? STEP_EXECUTION_STATUS.SUCCESS
         : STEP_EXECUTION_STATUS.FAILED;
-      await this.stepExecutionRepository.save(
-        this.stepExecutionRepository.create({
-          runId: run.id,
-          stepId: step.id,
-          status: stepStatus,
-          output: output || null,
-          attemptCount,
-        }),
-      );
+
+await this.stepExecutionRepository.save(
+  this.stepExecutionRepository.create({
+    runId: run.id,
+    stepId: step.id,
+    status: stepStatus,
+    output: output || null,
+    attemptCount,
+    failureReason,
+    errorMessage,
+  }),
+);
 
       await this.executionRunRepository.update(run.id, {
         currentStepIndex: i + 1,
@@ -96,6 +115,7 @@ export class ExecutionService {
         await this.executionRunRepository.update(run.id, {
           status: RUN_STATUS.FAILED,
         });
+
         return this.getRun(run.id);
       }
 
@@ -105,6 +125,7 @@ export class ExecutionService {
     await this.executionRunRepository.update(run.id, {
       status: RUN_STATUS.SUCCESS,
     });
+
     return this.getRun(run.id);
   }
 
@@ -113,9 +134,11 @@ export class ExecutionService {
       where: { id: runId },
       relations: { workflow: true, stepExecutions: { step: true } },
     });
+
     if (!run) {
       throw new NotFoundException(`Execution run with id ${runId} not found`);
     }
+
     return run;
   }
 }
